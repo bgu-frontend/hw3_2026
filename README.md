@@ -211,7 +211,9 @@ backend/
 
 | Method | Endpoint | Body | Success | Errors |
 |---|---|---|---|---|
-| GET  | `/notes/filter?query=<q>` | — | `200 OK` array of up to 10 notes (substring match on `content`, chronological order), `X-Total-Count` header | `400` if `query` is missing, `401` if not authenticated, `500` |
+| GET  | `/notes/filter?query=<q>` | — | `200 OK` array of up to 10 notes (substring match on `content`, chronological order), `X-Total-Count` header | `400` if `query` is missing, `500` |
+
+> Note: `/notes/filter` is a **public route** — no authentication is required. This allows the backend agent to call it directly without a token when processing AI requests.
 | POST | `/ai/complete` | `{ prompt: string }` | `200 OK` `{ text: string }` | `400` invalid body, `401` not authenticated, `502` if Ollama unreachable, `504` if the agent times out, `500` |
 
 - 401: Unauthorized — the user is unknown and needs to authenticate to get a response (e.g., tried to edit, delete, etc.), or supplied incorrect credentials (e.g., during login).
