@@ -86,21 +86,19 @@ You are allowed to use AI assistants, but you must use them responsibly:
 }
 ```
 
-## Per User Behaviour 
-- Each note's `Edit`/`Delete` buttons, are shown only for the author; the user is logged in, and their email is the same as the name of the note's author.
 
-### Caching
+
+## Caching
 In react, implement the following caching mechanism, to reduce backend/database pressure:
 - We'll have 5 (=pagination size) pre-fetched pages.
--  The pages we will store are the pages that are visible in the current page pagination bar (for example, if the current page is 5, and the shown pages are 3,4,5,6,7, then the cached pages are also 3,4,5,6,7).
--  When the user is browsing to a new page:
+- The pages we will store are the pages that are visible in the current page pagination bar (for example, if the current page is 5, and the shown pages are 3,4,5,6,7, then the cached pages are also 3,4,5,6,7).
+- When the user is browsing to a new page:
     - If the current page is in the cache, it will be loaded from it.
-    -  Also, asynchronically in the background, the frontend will get the minimal amount of pages needed. For example, when moving from page 5 to 6, only one page should be fetched, since the rest are already in the cache.
+    - Also, asynchronously in the background, the frontend will get the minimal amount of pages needed. For example, when moving from page 5 to 6, only one page should be fetched, since the rest are already in the cache.
         - It's ok to have 5 fetches of 10 notes each, instead of one fetch of 50 notes; it's ok to use the existing 10-notes fetching API.
--  Examples:
-    -  Moving from page 1 to 2 should not fetch new data to the cache.
+- Examples:
+    - Moving from page 1 to 2 should not fetch new data to the cache.
 - We do not cache AI responses; every click on the notes-based AI assistant hits `/ai/complete` fresh.
-
 
 ## AI feature: "Notes-based AI assistant"
 
@@ -212,21 +210,11 @@ backend/
 | Method | Endpoint | Body | Success | Errors |
 |---|---|---|---|---|
 | GET  | `/notes/filter?query=<q>` | — | `200 OK` array of up to 10 notes (substring match on `content`, chronological order), `X-Total-Count` header | `400` if `query` is missing, `500` |
-
-> Note: `/notes/filter` is a **public route** — no authentication is required. This allows the backend agent to call it directly without a token when processing AI requests.
 | POST | `/ai/complete` | `{ prompt: string }` | `200 OK` `{ text: string }` | `400` invalid body, `401` not authenticated, `502` if Ollama unreachable, `504` if the agent times out, `500` |
 
-- 401: Unauthorized — the user is unknown and needs to authenticate to get a response (e.g., tried to edit, delete, etc.), or supplied incorrect credentials (e.g., during login).
+> Note: `/notes/filter` is a public route — no authentication is required. This allows the backend agent to call it directly without a token when processing AI requests.
 
-### Frontend UI spec
-
-- **Notes-based AI assistant button** (visible on the new-note form when logged in):
-    - `data-testid`: `"help_me_write"`
-    - Shown as a star icon next to the note text area.
-    - On click, an inline text input and a Generate button appear next to the note body.
-        - prompt input `data-testid`: `"help_me_write_prompt"`
-        - Generate button `data-testid`: `"help_me_write_submit"`
-    - On Generate, the frontend `POST`s `{ prompt: <input-value> }` to `POST /ai/complete`. On `200 OK`, the returned `text` is appended to the current note body (do not replace existing content).
+- 401: Unauthorized — the user is not authenticated (required for creating, editing, or deleting a note, and for the AI assistant), or supplied incorrect credentials during login.
 
 ### Backend test requirements
 
@@ -252,58 +240,70 @@ The required test:
 We will not test concurrent AI requests. Grading sends one `/ai/complete` at a time; you don't need to handle parallel calls correctly.
 
 ## Frontend requirements
-- **Routes description**
-  - The application will have the following routes: (see react dom router)
+
+### Per-user behaviour
+- Each note's `Edit`/`Delete` buttons are shown only for the author: the user must be logged in and their email must match the note author's email.
+
+### Routes
+- The application will have the following routes: (see react dom router)
     - `/` – Homepage: the same page we saw on the previous exercises, can be seen by all users, even if they did not log in.
-  The homepage (when user is not logged in) will show **navigation buttons** that redirect to the login and create user pages:
+      The homepage (when user is not logged in) will show **navigation buttons** that redirect to the login and create user pages:
         - **Login page button**:
             - Text: `Go to Login`
             - `data-testid`: **"go_to_login_button"**
         - **Create User page button**:
             - Text: `Create New User`
             - `data-testid`: **"go_to_create_user_button"**
-    
     - `/login` – Login page containing the login form.
     - `/create-user` – Create User page containing the registration form.
-- **Components' description**
-    - **Logout button** (`/` homepage when logged in):
-        - `data-testid`: **"logout"**
-        - Behavior:
-            - Deletes the token from React state.
-            - The user is now logged out (see: `/` homepage when not logged in)
-            - _Comment: It should also be added to a blacklist on the server so it won't be used later. In this exercise, we won't use a blacklist._
 
-    - **Add Note Form** (`/` homepage when logged in): 
-        - this button will appear only when logged in. 
-        - Naturally, the created note will include the current user's details.
-        - Other than that, it's identical to the previous exercise.
-          
-    - **Create User form** (`/create-user` route):
-      - `data-testid` for form: **"create_user_form"**
-      - Fields:
-          - `Name`, `data-testid`: **"create_user_form_name"**
-          - `Email`, `data-testid`: **"create_user_form_email"**. The email doesn't need to be verified for uniqueness or correctness.
-          - `Username`, `data-testid`: **"create_user_form_username"**
-          - `Password`, `data-testid`: **"create_user_form_password"**
-      - Create User button: (submit)
-          - Text: `Create User`
-          - `data-testid`: **"create_user_form_create_user"**
-      - Behaviour: the user is saved in the database, and redirected back to the homepage (while still logged out).
+### Components
 
-    - **Login form** (`/login` route):
-      - `data-testid` for form: **"login_form"**
-      - Fields:
-          - `Username`, `data-testid`: **"login_form_username"**
-          - `Password`, `data-testid`: **"login_form_password"**
-      - Submit button:
-          - Text: `Login`
-          - `data-testid`: **"login_form_login"**
-      - Behaviour: a succesful login redirects the user to the home page, and he/she are now logged in. A failed attempt will print an error of your choice to the user, while staying in the same page.
-          
-      - Token behavior:
-          - After login, the token is saved in React state.
-          - All authenticated API requests will send the token via an `'Authorization'` header.
-          - _Note: While the flowchart which we've seen in class explains that the token should be saved without exposing it to frontend JavaScript, Full Stack Open actual code stores it in the frontend state — this is for educational purposes, but not secure as HTTP-only cookies._
+- **Logout button** (`/` homepage when logged in):
+    - `data-testid`: **"logout"**
+    - Behavior:
+        - Deletes the token from React state.
+        - The user is now logged out (see: `/` homepage when not logged in).
+        - _Comment: It should also be added to a blacklist on the server so it won't be used later. In this exercise, we won't use a blacklist._
+
+- **Add Note Form** (`/` homepage when logged in):
+    - Appears only when logged in.
+    - The created note will include the current user's details.
+    - Other than that, it's identical to the previous exercise.
+
+- **Notes-based AI assistant button** (visible on the new-note form when logged in):
+    - `data-testid`: `"help_me_write"`
+    - Shown as a star icon next to the note text area.
+    - On click, an inline text input and a Generate button appear next to the note body.
+        - prompt input `data-testid`: `"help_me_write_prompt"`
+        - Generate button `data-testid`: `"help_me_write_submit"`
+    - On Generate, the frontend `POST`s `{ prompt: <input-value> }` to `POST /ai/complete`. On `200 OK`, the returned `text` is appended to the current note body (do not replace existing content).
+
+- **Create User form** (`/create-user` route):
+    - `data-testid` for form: **"create_user_form"**
+    - Fields:
+        - `Name`, `data-testid`: **"create_user_form_name"**
+        - `Email`, `data-testid`: **"create_user_form_email"**. The email doesn't need to be verified for uniqueness or correctness.
+        - `Username`, `data-testid`: **"create_user_form_username"**
+        - `Password`, `data-testid`: **"create_user_form_password"**
+    - Create User button (submit):
+        - Text: `Create User`
+        - `data-testid`: **"create_user_form_create_user"**
+    - Behaviour: the user is saved in the database, and redirected back to the homepage (while still logged out).
+
+- **Login form** (`/login` route):
+    - `data-testid` for form: **"login_form"**
+    - Fields:
+        - `Username`, `data-testid`: **"login_form_username"**
+        - `Password`, `data-testid`: **"login_form_password"**
+    - Submit button:
+        - Text: `Login`
+        - `data-testid`: **"login_form_login"**
+    - Behaviour: a successful login redirects the user to the home page, and they are now logged in. A failed attempt will print an error of your choice to the user, while staying on the same page.
+    - Token behavior:
+        - After login, the token is saved in React state.
+        - All authenticated API requests will send the token via an `'Authorization'` header.
+        - _Note: While the flowchart which we've seen in class explains that the token should be saved without exposing it to frontend JavaScript, Full Stack Open actual code stores it in the frontend state — this is for educational purposes, but not secure as HTTP-only cookies._
 
 ## The tester will:
 - Assume Ollama is already running locally on `http://localhost:11434` with the `qwen2.5:3b` model pulled and available — you do not need to start it or ship the model. If your code reads `OLLAMA_URL` or `AI_MODEL` from the environment, default to these values when they are unset.
