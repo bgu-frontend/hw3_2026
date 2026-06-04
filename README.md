@@ -12,7 +12,7 @@ This task's goals are:
 - Your submitted git repo should be *private*, please add 'barashd@post.bgu.ac.il' and 'Gal-Fadlon' to the list of collaborators.
 - Do not use external libraries that provide the pagination component. If in doubt, contact the course staff.
 - Deadline: 18.6.26, end of day.
-- Additionally, solve the [theoretical questions](TBD).
+- Additionally, solve the [theoretical questions](https://docs.google.com/forms/d/e/1FAIpQLSfw-8MCLhnovDPNXt5hsBYmtV8-aXtKX80x-KRSJ9EpdknJ_A/viewform?usp=dialog).
 - Use TypeScript, and follow the linter's warnings (see eslint below). The linter can be faulty; use it to get early signs of bugs, the automatic tests will not take away points for linter warnings.
 
 - Git repository content:
